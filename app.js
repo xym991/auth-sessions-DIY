@@ -7,11 +7,12 @@ const bcrypt = require('bcrypt');
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr(process.env.SECRET_KEY);
 const cookieParser = require('cookie-parser')
+const ONE_DAY = 86400000;
 
 app.set("view engine", 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
-mongoose.connect("mongodb://localhost:27017/userDB2");
+mongoose.connect(process.env.CONNECTION_STRING);
 
 const schema = new mongoose.Schema({ username: { type: "string", required: true }, password: { type: "string", required: true } });
 
@@ -63,7 +64,7 @@ app.post("/register", (req, res) => {
                 else {
                     let sessionKey = await createSession(username);
 
-                    if (sessionKey) res.cookie('session', sessionKey, { maxAge: 86400000 });
+                    if (sessionKey) res.cookie('session', sessionKey, { maxAge: ONE_DAY });
 
 
                     res.render('secrets');
@@ -86,7 +87,7 @@ app.post('/login', (req, res) => {
 
                         let sessionKey = await createSession(username);
 
-                        if (sessionKey) res.cookie('session', sessionKey, { maxAge: 86400000 });
+                        if (sessionKey) res.cookie('session', sessionKey, { maxAge: ONE_DAY });
 
 
                         res.render('secrets');
@@ -110,7 +111,7 @@ async function createSession(username) {
         const existingSession = await Session.findOne({ username: username });
         if (!existingSession) {
             let _session = await session.save()
-            setTimeout(deleteSession.bind(null, _session._id), 86400000);
+            setTimeout(deleteSession.bind(null, _session._id), ONE_DAY);
             return cryptr.encrypt("sessionID=" + _session._id + "&username=" + _session.username);
         } else return undefined;
 
